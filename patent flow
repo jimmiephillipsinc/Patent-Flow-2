@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PatentFlow - The Patent System That Actually Works</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="PatentFlow">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- PWA Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%234f46e5'/%3E%3Ctext x='50' y='60' text-anchor='middle' fill='white' font-size='40' font-family='Arial'%3EPF%3C/text%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%234f46e5'/%3E%3Ctext x='50' y='60' text-anchor='middle' fill='white' font-size='40' font-family='Arial'%3EPF%3C/text%3E%3C/svg%3E">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22PatentFlow%22%2C%22short_name%22%3A%22PatentFlow%22%2C%22description%22%3A%22The%20patent%20system%20that%20actually%20works%20for%20inventors%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23ffffff%22%2C%22theme_color%22%3A%22%234f46e5%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage/svg%2Bxml%2C%253Csvg%2520xmlns%253D%2527http%253A//www.w3.org/2000/svg%2527%2520viewBox%253D%25270%25200%2520192%2520192%2527%253E%253Ccircle%2520cx%253D%252796%2527%2520cy%253D%252796%2527%2520r%253D%252586%2527%2520fill%253D%2527%25234f46e5%2527/%253E%253Ctext%2520x%253D%252796%2527%2520y%253D%2527115%2527%2520text-anchor%253D%2527middle%2527%2520fill%253D%2527white%2527%2520font-size%253D%252770%2527%2520font-family%253D%2527Arial%2527%253EPF%253C/text%253E%253C/svg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image/svg%2Bxml%22%7D%2C%7B%22src%22%3A%22data%3Aimage/svg%2Bxml%2C%253Csvg%2520xmlns%253D%2527http%253A//www.w3.org/2000/svg%2527%2520viewBox%253D%25270%25200%2520512%2520512%2527%253E%253Ccircle%2520cx%253D%2527256%2527%2520cy%253D%2527256%2527%2520r%253D%2527230%2527%2520fill%253D%2527%25234f46e5%2527/%253E%253Ctext%2520x%253D%2527256%2527%2520y%253D%2527310%2527%2520text-anchor%253D%2527middle%2527%2520fill%253D%2527white%2527%2520font-size%253D%2527180%2527%2520font-family%253D%2527Arial%2527%253EPF%253C/text%253E%253C/svg%253E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image/svg%2Bxml%22%7D%5D%7D">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+    <style>
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .progress-step {
+            transition: all 0.3s ease;
+        }
+        .file-upload-area {
+            transition: border-color 0.3s ease;
+        }
+        .file-upload-area:hover {
+            border-color: #6366f1;
+        }
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            .mobile-stack {
+                flex-direction: column !important;
+            }
+            .mobile-full {
+                width: 100% !important;
+            }
+            .mobile-text-sm {
+                font-size: 0.875rem !important;
+            }
+            .mobile-p-4 {
+                padding: 1rem !important;
+            }
+        }
+        /* PWA specific styles */
+        .pwa-safe-area {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        /* Install prompt */
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transform: translateY(100px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        .install-prompt.show {
+            transform: translateY(0);
+        }
+        /* Camera integration styles */
+        .camera-preview {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pwa-safe-area">
+    <!-- Install Prompt -->
+    <div id="install-prompt" class="install-prompt">
+        <div class="flex items-center justify-between">
+            <div class="flex-1">
+                <p class="font-semibold">Install PatentFlow</p>
+                <p class="text-sm opacity-90">Get the full app experience</p>
+            </div>
+            <div class="flex space-x-2 ml-4">
+                <button onclick="installApp()" class="bg-white/20 px-4 py-2 rounded-lg text-sm font-medium">
+                    Install
+                </button>
+                <button onclick="dismissInstall()" class="bg-white/10 px-3 py-2 rounded-lg text-sm">
+                    ×
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="p-4 sm:p-6">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-6 sm:mb-8">
+                <div class="flex items-center justify-center mb-4">
+                    <div class="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                        PF
+                    </div>
+                </div>
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">PatentFlow</h1>
+                <p class="text-lg sm:text-xl text-gray-600">The patent system that actually works for inventors</p>
+                <div class="mt-4 flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-8 text-sm text-gray-500">
+                    <div class="flex items-center justify-center">
+                        <i data-feather="clock" class="w-4 h-4 mr-1"></i>
+                        Average time: 48 hours
+                    </div>
+                    <div class="flex items-center justify-center">
+                        <i data-feather="dollar-sign" class="w-4 h-4 mr-1"></i>
+                        Cost: $299 (not $29,000)
+                    </div>
+                    <div class="flex items-center justify-center">
+                        <i data-feather="zap" class="w-4 h-4 mr-1"></i>
+                        AI-powered analysis
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Steps - Mobile Optimized -->
+            <div class="mb-6 sm:mb-8 overflow-x-auto">
+                <div class="flex justify-center min-w-max px-4">
+                    <div class="flex items-center space-x-2 sm:space-x-4">
+                        <div class="flex items-center">
+                            <div class="progress-step flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 bg-indigo-600 border-indigo-600 text-white" id="step1">
+                                <i data-feather="upload" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                            </div>
+                            <div class="ml-2 sm:ml-3">
+                                <p class="text-xs sm:text-sm font-medium text-indigo-600">Upload</p>
+                            </div>
+                        </div>
+                        <i data-feather="arrow-right" class="w-4 h-4 text-gray-300" id="arrow1"></i>
+                        
+                        <div class="flex items-center">
+                            <div class="progress-step flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 bg-white border-gray-300 text-gray-400" id="step2">
+                                <i data-feather="search" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                            </div>
+                            <div class="ml-2 sm:ml-3">
+                                <p class="text-xs sm:text-sm font-medium text-gray-400" id="step2-text">Analysis</p>
+                            </div>
+                        </div>
+                        <i data-feather="arrow-right" class="w-4 h-4 text-gray-300" id="arrow2"></i>
+                        
+                        <div class="flex items-center">
+                            <div class="progress-step flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 bg-white border-gray-300 text-gray-400" id="step3">
+                                <i data-feather="dollar-sign" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                            </div>
+                            <div class="ml-2 sm:ml-3">
+                                <p class="text-xs sm:text-sm font-medium text-gray-400" id="step3-text">Payment</p>
+                            </div>
+                        </div>
+                        <i data-feather="arrow-right" class="w-4 h-4 text-gray-300" id="arrow3"></i>
+                        
+                        <div class="flex items-center">
+                            <div class="progress-step flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 bg-white border-gray-300 text-gray-400" id="step4">
+                                <i data-feather="check-circle" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                            </div>
+                            <div class="ml-2 sm:ml-3">
+                                <p class="text-xs sm:text-sm font-medium text-gray-400" id="step4-text">Submit</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="bg-white rounded-xl shadow-lg p-4 sm:p-8">
+                <!-- Step 1: Upload & Describe -->
+                <div id="content-step1" class="space-y-6">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Describe Your Invention</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                What problem does your invention solve?
+                            </label>
+                            <textarea 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                rows="4"
+                                placeholder="My mother has arthritis and struggles to open jars. My invention is an ergonomic grip enhancer that..."
+                                id="problem-description"
+                            ></textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                How does it work?
+                            </label>
+                            <textarea 
+                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                rows="4"
+                                placeholder="The device uses a lever mechanism with textured grips to multiply gripping force while reducing strain on arthritic joints..."
+                                id="solution-description"
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced file upload with camera -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Upload Supporting Materials
+                        </label>
+                        
+                        <!-- Camera preview (hidden by default) -->
+                        <div id="camera-section" class="hidden mb-4">
+                            <video id="camera-preview" class="camera-preview" autoplay playsinline></video>
+                            <div class="flex space-x-2 mt-2">
+                                <button onclick="capturePhoto()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm">
+                                    <i data-feather="camera" class="w-4 h-4 inline mr-1"></i> Capture
+                                </button>
+                                <button onclick="stopCamera()" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Upload options -->
+                        <div class="space-y-3">
+                            <div class="file-upload-area border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer" onclick="document.getElementById('file-input').click()">
+                                <input type="file" multiple accept="image/*,.pdf,.doc,.docx" id="file-input" class="hidden" onchange="handleFileUpload(event)">
+                                <i data-feather="upload" class="w-12 h-12 text-gray-400 mx-auto mb-2"></i>
+                                <p class="text-sm text-gray-600">
+                                    Drop files here or click to upload<br>
+                                    <span class="text-xs text-gray-400">Drawings, photos, prototypes, technical specs</span>
+                                </p>
+                            </div>
+                            
+                            <!-- Camera button for mobile -->
+                            <button onclick="startCamera()" class="w-full bg-blue-100 text-blue-700 py-3 rounded-lg font-medium hover:bg-blue-200 transition-colors flex items-center justify-center md:hidden">
+                                <i data-feather="camera" class="w-5 h-5 mr-2"></i>
+                                Take Photo with Camera
+                            </button>
+                        </div>
+                        
+                        <div id="uploaded-files" class="mt-3 space-y-1 hidden"></div>
+                    </div>
+
+                    <button 
+                        onclick="goToStep(2)"
+                        class="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                    >
+                        Continue to AI Analysis
+                    </button>
+                </div>
+
+                <!-- Step 2: AI Analysis -->
+                <div id="content-step2" class="space-y-6 hidden">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-900">AI-Powered Prior Art Analysis</h2>
+                    
+                    <div id="analysis-loading" class="text-center py-12">
+                        <div class="animate-spin w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full mx-auto mb-4"></div>
+                        <p class="text-gray-600">Analyzing millions of patents, publications, and products...</p>
+                        <p class="text-sm text-gray-400 mt-2">This usually takes 30-60 seconds</p>
+                    </div>
+
+                    <div id="analysis-results" class="space-y-6 hidden">
+                        <!-- Patentability Score -->
+                        <div class="bg-gradient-to-r from-green-50 to-blue-50 p-4 sm:p-6 rounded-lg border border-green-200">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">Patentability Score</h3>
+                                    <p class="text-sm text-gray-600">Based on novelty, non-obviousness, and utility analysis</p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-3xl font-bold text-green-600">78%</div>
+                                    <div class="text-sm text-green-600 font-medium">Strong Potential</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Prior Art Results -->
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Prior Art Analysis</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-4 border rounded-lg">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium text-gray-900 truncate">Similar device for opening containers</p>
+                                        <p class="text-sm text-gray-500">65% similarity • Needs review</p>
+                                    </div>
+                                    <div class="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 ml-2">
+                                        Review
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between p-4 border rounded-lg">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium text-gray-900 truncate">Ergonomic grip mechanisms</p>
+                                        <p class="text-sm text-gray-500">45% similarity • Reference only</p>
+                                    </div>
+                                    <div class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 ml-2">
+                                        Clear
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between p-4 border rounded-lg">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium text-gray-900 truncate">Arthritis-friendly tools</p>
+                                        <p class="text-sm text-gray-500">38% similarity • Reference only</p>
+                                    </div>
+                                    <div class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 ml-2">
+                                        Clear
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Recommendations -->
+                        <div class="bg-blue-50 p-4 sm:p-6 rounded-lg border border-blue-200">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">AI Recommendations</h3>
+                            <ul class="space-y-2 text-sm text-gray-700">
+                                <li class="flex items-start">
+                                    <i data-feather="check-circle" class="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0"></i>
+                                    Your ergonomic approach is novel - emphasize the specific joint-relief mechanism
+                                </li>
+                                <li class="flex items-start">
+                                    <i data-feather="alert-circle" class="w-4 h-4 text-yellow-500 mr-2 mt-0.5 flex-shrink-0"></i>
+                                    Consider clarifying how your lever system differs from Patent #7,234,891
+                                </li>
+                                <li class="flex items-start">
+                                    <i data-feather="check-circle" class="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0"></i>
+                                    Your material choice adds patentable value - include composition details
+                                </li>
+                            </ul>
+                        </div>
+
+                        <button 
+                            onclick="goToStep(3)"
+                            class="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                        >
+                            Proceed to Payment
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Review & Payment -->
+                <div id="content-step3" class="space-y-6 hidden">
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Review & Payment</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h3 class="font-medium text-gray-900 mb-2">Application Summary</h3>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>• Ergonomic jar opener for arthritis relief</li>
+                                    <li>• <span id="file-count">0</span> supporting documents uploaded</li>
+                                    <li>• Prior art analysis complete</li>
+                                    <li>• 78% patentability score</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                                <h3 class="font-medium text-green-800 mb-2">What happens next?</h3>
+                                <ul class="text-sm text-green-700 space-y-1">
+                                    <li>• Application submitted within 24 hours</li>
+                                    <li>• Initial review within 2 weeks</li>
+                                    <li>• Patent decision within 6 months</li>
+                                    <li>• Real-time status updates via email</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="border rounded-lg p-4">
+                                <h3 class="font-medium text-gray-900 mb-4">Payment Breakdown</h3>
+                                <div class="space-y-2 text-sm">
+                                    <div class="flex justify-between">
+                                        <span>Application fee</span>
+                                        <span>$199</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>AI analysis</span>
+                                        <span>$50</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Expedited review</span>
+                                        <span>$50</span>
+                                    </div>
+                                    <div class="border-t pt-2 flex justify-between font-medium">
+                                        <span>Total</span>
+                                        <span>$299</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4 p-3 bg-yellow-50 rounded border border-yellow-200">
+                                    <p class="text-xs text-yellow-800">
+                                        💡 Compare to traditional patent process: $15,000-$30,000 + 2-3 years
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button 
+                                onclick="goToStep(4)"
+                                class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                            >
+                                Pay $299 & Submit Application
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Success -->
+                <div id="content-step4" class="text-center py-12 hidden">
+                    <i data-feather="check-circle" class="w-20 h-20 text-green-500 mx-auto mb-6"></i>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Application Submitted!</h2>
+                    <p class="text-lg text-gray-600 mb-6">
+                        Your patent application has been successfully submitted and is now in the review queue.
+                    </p>
+                    
+                    <div class="bg-gray-50 p-6 rounded-lg max-w-md mx-auto">
+                        <p class="text-sm text-gray-600 mb-2">Application ID</p>
+                        <p class="text-xl font-mono font-bold text-gray-900">#PF-2025-001847</p>
+                    </div>
+                    
+                    <p class="text-sm text-gray-500 mt-6">
+                        You'll receive email updates at each stage of the review process.
+                    </p>
+                    
+                    <button 
+                        onclick="resetForm()"
+                        class="mt-6 bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                    >
+                        Submit Another Application
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bottom CTA -->
+            <div class="mt-8 text-center text-sm text-gray-500">
+                <p>No lawyers required • No bureaucratic maze • No 3-year waiting periods</p>
+                <p class="mt-1">Just innovation, protected efficiently.</p>
+                <p class="mt-4 text-xs">
+                    <em>This is a concept demonstration. Not affiliated with the USPTO. 
+                    Built to show what the patent system could be.</em>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let uploadedFiles = [];
+        let deferredPrompt;
+        let cameraStream;
+
+        // Initialize Feather icons
+        feather.replace();
+
+        // PWA Installation Logic
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            showInstallPrompt();
+        });
+
+        function showInstallPrompt() {
+            const prompt = document.getElementById('install-prompt');
+            if (prompt) {
+                setTimeout(() => {
+                    prompt.classList.add('show');
+                }, 2000);
+            }
+        }
+
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    }
+                    deferredPrompt = null;
+                    dismissInstall();
+                });
+            }
+        }
+
+        function dismissInstall() {
+            const prompt = document.getElementById('install-prompt');
+            if (prompt) {
+                prompt.classList.remove('show');
+            }
+        }
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // Create a simple service worker inline for demo
+                const swCode = `
+                    const CACHE_NAME = 'patentflow-v1';
+                    const urlsToCache = [
+                        '/',
+                        '/index.html',
+                        'https://cdn.tailwindcss.com',
+                        '
